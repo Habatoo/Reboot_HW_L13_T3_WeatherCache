@@ -37,7 +37,7 @@ public class WeatherCache {
      * @param city город для запроса.
      * @return возвращает объект {@link WeatherInfo} с информацией об актуальной погода.
      */
-    public WeatherInfo getWeatherInfo(String city) {
+    public synchronized WeatherInfo getWeatherInfo(String city) {
 
         WeatherInfo weatherInfo = cache.get(city);
 
@@ -50,9 +50,7 @@ public class WeatherCache {
         if (weatherInfo == null) {
             weatherInfo = weatherProvider.get(city);
             if (weatherInfo != null) {
-                synchronized (this) {
-                    cache.put(city, weatherInfo);
-                }
+                cache.put(city, weatherInfo);
             }
         }
 
@@ -70,11 +68,9 @@ public class WeatherCache {
          * происходит загрузка новой информации по погоде из интернета.
          */
         if (weatherInfo != null && weatherInfo.getExpiryTime().isBefore(LocalDateTime.now())) {
-            synchronized (this) {
-                removeWeatherInfo(city);
-                weatherInfo = weatherProvider.get(city);
-                cache.put(city, weatherInfo);
-            }
+            removeWeatherInfo(city);
+            weatherInfo = weatherProvider.get(city);
+            cache.put(city, weatherInfo);
         }
 
         return weatherInfo;
@@ -84,7 +80,7 @@ public class WeatherCache {
      * Метод {@link WeatherCache#removeWeatherInfo(String)} объекта {@link WeatherCache}
      * реализует удаление не актуальной информации из кеша.
      **/
-    public void removeWeatherInfo(String city) {
+    public synchronized void removeWeatherInfo(String city) {
         cache.remove(city);
     }
 
